@@ -53,6 +53,8 @@
 #include "lilygoT_HMI.h"
 #elif defined(SPOTPEAR)
 #include "spotpearKeychain.h"
+#elif defined(ESP32_LOLIN32_LITE)
+#include "esp32lolin32lite.h"
 
 #else
 #error "No device defined"
