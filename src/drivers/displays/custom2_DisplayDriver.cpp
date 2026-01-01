@@ -235,99 +235,93 @@ unsigned long previousMillisGlobal = 0;
 void custom2_Display_GlobalHashScreen(unsigned long mElapsed)
 {
 
-    printPoolData();
-    hasChangedScreen = false;
+    
 
     if (hasChangedScreen || (current_screen!=SCREEN_GLOBAL))  tft.pushImage(0, 0, globalStatsWidth, globalStatsHeight, globalStats);
     current_screen=SCREEN_GLOBAL;
     
+    printPoolData();
+    hasChangedScreen = false;
+    
     coin_data data = getCoinData(mElapsed, false);
     mining_data mining_data = getMiningData(mElapsed);
-    // 
-    // global_data g_data;
-    // printheap();
-    String globalHash = getGlobalHashRate();
+
     
-  //   if ((millis() - previousMillisGlobal) >= 10000){
-  //     Serial.println(" ------ ciaoooo ");
-  //     previousMillisGlobal=millis();
-  //   }
-    //   updateGlobalData();
-    //   previousMillisGlobal = millis();
-    // } else {
+    if ((previousMillisGlobal==0) || (millis() - previousMillisGlobal) >= 25000){
+      String globalHash = getGlobalHashRate();
+      String difficulty = getGlobalDifficulty();
+
+      // ---------------------- block difficulty
+      createBackgroundSprite(90, 30);
+      // background.fillSprite(TFT_BLUE);
+      background.pushImage(-140, -78, globalStatsWidth, globalStatsHeight, globalStats);
       
-    // }
+      render.setFontSize(14);
+      render.setAlignment(Align::TopRight);
+      render.rdrawString(difficulty.c_str(), 90, 1, 0xDEDB);
 
-    // Serial.println("globals -----------");
-    // String btcPrice = getBTCprice();
-    // String currHashRate = getCurrentHashRate(mElapsed);
-    // String time = getTime();
-    // String blkHeight = getBlockHeight();
-    Serial.println(" ------ globals ");
-    Serial.println(data.btcPrice);
-    Serial.println(globalHash);
-    Serial.println(data.currentTime);
-    Serial.println(data.blockHeight);
-    Serial.println(data.remainingBlocks);
-    Serial.println(" ---------------");
+      background.pushSprite(140, 78);
+      background.deleteSprite();
+      
+      // ---------------------- global Hashrate
+      createBackgroundSprite(73+20, 30);
+      // background.fillSprite(TFT_BLUE);
+      background.pushImage(-120, -147, globalStatsWidth, globalStatsHeight, globalStats);
+      
+      render.setFontSize(19);
+      render.setAlignment(Align::TopRight);
+      render.rdrawString(globalHash.c_str(), 87, 0, TFT_BLACK);
 
-    // String btcPrice = getBTCprice();
-    // String blkHeight = getBlockHeight();
-    // String currHashRate = getCurrentHashRate(mElapsed);
-    // String time = getTime();
+      background.pushSprite(120, 147);
+      background.deleteSprite();
+
+      previousMillisGlobal=millis();
+    }
+
     // ---------------------- bitcoin price
     createBackgroundSprite(100, 20);
-    background.fillSprite(TFT_RED);
-    // background.pushImage(-138, 0, globalStatsWidth, globalStatsHeight, globalStats);
+    // background.fillSprite(TFT_RED);
+    background.pushImage(-138, 0, globalStatsWidth, globalStatsHeight, globalStats);
     
     // Print BTC Price
     background.setFreeFont(FSSB9);
     background.setTextSize(1);
     background.setTextDatum(TL_DATUM);
     background.setTextColor(0xE71C);
-    background.drawString(data.globalHashRate.c_str(), 0, 3, GFXFF);
+    background.drawString(data.btcPrice.c_str(), 0, 3, GFXFF);
 
     background.pushSprite(138, 0);
     background.deleteSprite();
 
-    // // ---------------------- block progress
-    // createBackgroundSprite(210, 28);
-    // // background.fillSprite(TFT_GREEN);
-    // background.pushImage(0, -146, globalStatsWidth, globalStatsHeight, globalStats);
+    // ---------------------- block progress
+    int prog_bar_len = 109;
+    createBackgroundSprite(109, 20);
+    // background.fillSprite(TFT_GREEN);
+    background.pushImage(0, -155, globalStatsWidth, globalStatsHeight, globalStats);
+
+    // Draw percentage rectangle
+    int x2 = 1 + (prog_bar_len * data.progressPercent / 100);
+    background.fillRect(1, 1, x2, 17, 0xDEDB);
+
+    background.setTextFont(FONT2);
+    background.setTextSize(1); 
+    background.setTextDatum(MC_DATUM);
+    background.setTextColor(TFT_BLACK);
+    background.drawString(data.remainingBlocks.c_str(), 54, 10, FONT2);
     
+    background.pushSprite(0, 155);
+    background.deleteSprite();
 
-    // render.setFontSize(20);
-    // render.setAlignment(Align::TopRight);
-    // render.rdrawString(data.globalHashRate.c_str(), 205, 0, TFT_BLACK);
-
-    // // Draw percentage rectangle
-    // int x2 = 1 + (87 * data.progressPercent / 100);
-    // background.fillRect(1, 28-19, x2, 18, 0xDEDB);
-
-    // background.setTextFont(FONT2);
-    // background.setTextSize(1); 
-    // background.setTextDatum(MC_DATUM);
-    // background.setTextColor(TFT_BLACK);
-    // background.drawString(data.remainingBlocks.c_str(), 43, 28-10, FONT2);
+    // ---------------------- current block
+    createBackgroundSprite(124, 40);
+    // background.fillSprite(TFT_BLUE);
+    background.pushImage(-4, -94, globalStatsWidth, globalStatsHeight, globalStats);
     
-    // background.pushSprite(0, 146);
-    // background.deleteSprite();
+    render.setFontSize(26);
+    render.rdrawString(data.blockHeight.c_str(), 128-5, 98-94, 0xDEDB);
 
-    // // ---------------------- block properties
-    // createBackgroundSprite(120, 60);
-    // // background.fillSprite(TFT_MAGENTA);
-    // // background.pushImage(0, 0, globalStatsWidth, globalStatsHeight, globalStats);
-    
-    // background.pushSprite(120, 49);
-    // background.deleteSprite();
-
-    // // ---------------------- current block
-    // createBackgroundSprite(95, 40);
-    // // background.fillSprite(TFT_BLUE);
-    // // background.pushImage(0, 0, globalStatsWidth, globalStatsHeight, globalStats);
-    
-    // background.pushSprite(0, 98);
-    // background.deleteSprite();
+    background.pushSprite(4, 94);
+    background.deleteSprite();
 
     Serial.printf(">>> Completed %s share(s), %s Khashes, avg. hashrate %s KH/s\n",
                 mining_data.completedShares.c_str(), mining_data.totalKHashes.c_str(), mining_data.currentHashRate.c_str());
@@ -369,15 +363,18 @@ void custom2_Display_DoLedStuff(unsigned long frame)
     if (currentMillis - previousMillis >= 500)
     { // 0.5sec blink
       previousMillis = currentMillis;
-      int led_state = digitalRead(LED_PIN);
-      digitalWrite(LED_PIN, !led_state); // Cambia el estado del LED
-      digitalWrite(LED_PIN_G, led_state); // Cambia el estado del LED
+      digitalWrite(LED_PIN, LOW);
+      digitalWrite(LED_PIN_G, !digitalRead(LED_PIN_G));
     }
     break;
 
   case NM_hashing:
-    digitalWrite(LED_PIN, LOW);
-    digitalWrite(LED_PIN_G, HIGH);
+    if (currentMillis - previousMillis >= 500)
+    { // 0.5sec blink
+      previousMillis = currentMillis;
+      digitalWrite(LED_PIN, LOW);
+      digitalWrite(LED_PIN_G, !digitalRead(LED_PIN_G));
+    }
     break;
   }
 }

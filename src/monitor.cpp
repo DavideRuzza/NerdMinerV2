@@ -33,6 +33,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
 unsigned int bitcoin_price=0;
 unsigned int global_hash_rate=0;
+double global_difficulty=0;
 String current_block = "793261";
 global_data gData;
 pool_data pData;
@@ -131,13 +132,9 @@ String getGlobalHashRate(void){
   if((mGlobalHashRate == 0) || (millis() - mGlobalHashRate > UPDATE_Global_min * 60 * 1000)){
   
     if (WiFi.status() != WL_CONNECTED) {
-          static char price_buffer[16];
-          #if defined(PRICEEUR)
-            snprintf(price_buffer, sizeof(price_buffer), "eur%u", bitcoin_price);
-          #else
-            snprintf(price_buffer, sizeof(price_buffer), "$%u", bitcoin_price);
-          #endif
-          return String(price_buffer);
+          static char hash_buffer[16];
+          snprintf(hash_buffer, sizeof(hash_buffer), "%u", global_hash_rate);
+          return String(hash_buffer);
       }
     WiFiClientSecure client;
     client.setInsecure();   // <-- THIS fixes -30592
@@ -156,7 +153,7 @@ String getGlobalHashRate(void){
         double hashratePH = payload.toDouble();
         
         // Convert PH/s to EH/s (divide by 1,000,000)
-        double hashrateEH = hashratePH / 1000000.0;
+        double hashrateEH = hashratePH / 1000000000.0;
 
         global_hash_rate = (unsigned int) hashrateEH;
         mGlobalHashRate = millis();
@@ -174,6 +171,55 @@ String getGlobalHashRate(void){
 
   return String(hash_buffer);
 }
+
+unsigned long mGlobalDifficulty =0;
+
+String getGlobalDifficulty(void){
+  
+  global_data g_data_return;
+  if((mGlobalDifficulty == 0) || (millis() - mGlobalDifficulty > UPDATE_Global_min * 60 * 1000)){
+  
+    if (WiFi.status() != WL_CONNECTED) {
+          static char difficulty_buffer[16];
+          snprintf(difficulty_buffer, sizeof(difficulty_buffer), "%.2f T", global_difficulty);
+          return String(difficulty_buffer);
+      }
+    WiFiClientSecure client;
+    client.setInsecure();   // <-- THIS fixes -30592
+    HTTPClient http;
+    http.setTimeout(10000);
+    try {
+    http.begin(client, getGlobalDifficultyAPI);
+    int httpCode = http.GET();
+
+    if (httpCode == HTTP_CODE_OK) {
+      String payload = http.getString();
+      payload.trim();
+      
+      // Handle scientific notation (e.g., .48258433855481E14)
+      double diffValue = payload.toDouble(); // toDouble() handles scientific notation
+      
+      // diffValue is now something like: 48258433855481
+      // Convert to Terahash (divide by 1 trillion)
+      double diffInT = diffValue / 1000000000000.0;
+      
+      g_data_return.difficulty = String(diffInT, 2) + "T";
+      mGlobalDifficulty = millis();
+    }
+    
+    http.end();
+    } catch(...) {
+      Serial.println("Global Difficulty HTTP error caught");
+      http.end();
+    }
+  }  
+  
+  static char difficulty_buffer[16];
+  snprintf(difficulty_buffer, sizeof(difficulty_buffer), "%.2f T", global_difficulty);
+
+  return String(difficulty_buffer);
+}
+
 
 unsigned long mHeightUpdate = 0;
 

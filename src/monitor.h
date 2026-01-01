@@ -29,8 +29,9 @@
 
 //APIs Global Stats
 #define getGlobalHash "https://mempool.space/api/v1/mining/hashrate/3d"
-#define getGlobalHashRate "https://blockchain.info/q/hashrate" // easier
+#define getGlobalHashRateAPI "https://blockchain.info/q/hashrate" // easier
 #define getDifficulty "https://mempool.space/api/v1/difficulty-adjustment"
+#define getGlobalDifficultyAPI "https://blockchain.info/q/getdifficulty"
 #define getFees "https://mempool.space/api/v1/fees/recommended"
 #define UPDATE_Global_min 2
 
@@ -135,6 +136,7 @@ String getTime(void);
 String getBlockHeight(void);
 void updateGlobalData(void);
 String getGlobalHashRate(void);
+String getGlobalDifficulty(void);
 
 mining_data getMiningData(unsigned long mElapsed);
 clock_data getClockData(unsigned long mElapsed);
