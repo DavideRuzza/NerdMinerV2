@@ -32,6 +32,7 @@ bool invertColors = false;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
 unsigned int bitcoin_price=0;
+unsigned int global_hash_rate=0;
 String current_block = "793261";
 global_data gData;
 pool_data pData;
@@ -63,6 +64,8 @@ void updateGlobalData(void){
         if (WiFi.status() != WL_CONNECTED) return;
             
         //Make first API call to get global hash and current difficulty
+        // WiFiClientSecure client;
+        // client.setInsecure();   // <-- THIS fixes -30592
         HTTPClient http;
         http.setTimeout(10000);
         try {
@@ -120,33 +123,87 @@ void updateGlobalData(void){
     }
 }
 
+unsigned long mGlobalHashRate =0;
+
+String getGlobalHashRate(void){
+  
+  global_data g_data_return;
+  if((mGlobalHashRate == 0) || (millis() - mGlobalHashRate > UPDATE_Global_min * 60 * 1000)){
+  
+    if (WiFi.status() != WL_CONNECTED) {
+          static char price_buffer[16];
+          #if defined(PRICEEUR)
+            snprintf(price_buffer, sizeof(price_buffer), "eur%u", bitcoin_price);
+          #else
+            snprintf(price_buffer, sizeof(price_buffer), "$%u", bitcoin_price);
+          #endif
+          return String(price_buffer);
+      }
+    WiFiClientSecure client;
+    client.setInsecure();   // <-- THIS fixes -30592
+    HTTPClient http;
+    http.setTimeout(10000);
+    try {
+    http.begin(client, getGlobalHashRateAPI);
+    int httpCode = http.GET();
+
+    if (httpCode == HTTP_CODE_OK) {
+        String payload = http.getString();
+
+        payload.trim();
+        
+        // Blockchain.info returns hashrate in PH/s
+        double hashratePH = payload.toDouble();
+        
+        // Convert PH/s to EH/s (divide by 1,000,000)
+        double hashrateEH = hashratePH / 1000000.0;
+
+        global_hash_rate = (unsigned int) hashrateEH;
+        mGlobalHashRate = millis();
+      }
+      
+      http.end();
+      } catch(...) {
+        Serial.println("Global Hash Rate HTTP error caught");
+        http.end();
+      }
+    }  
+  
+  static char hash_buffer[16];
+  snprintf(hash_buffer, sizeof(hash_buffer), "%u", global_hash_rate);
+
+  return String(hash_buffer);
+}
+
 unsigned long mHeightUpdate = 0;
 
 String getBlockHeight(void){
     
     if((mHeightUpdate == 0) || (millis() - mHeightUpdate > UPDATE_Height_min * 60 * 1000)){
     
-        if (WiFi.status() != WL_CONNECTED) return current_block;
-            
-        HTTPClient http;
-        http.setTimeout(10000);
-        try {
-        http.begin(getHeightAPI);
-        int httpCode = http.GET();
+      if (WiFi.status() != WL_CONNECTED) return current_block;
+      
+      WiFiClientSecure client;
+      client.setInsecure();   // <-- THIS fixes -30592
+      HTTPClient http;
+      http.setTimeout(10000);
+      try {
+      http.begin(client, getHeightAPI);
+      int httpCode = http.GET();
 
-        if (httpCode == HTTP_CODE_OK) {
-            String payload = http.getString();
-            payload.trim();
+      if (httpCode == HTTP_CODE_OK) {
+          String payload = http.getString();
+          payload.trim();
 
-            current_block = payload;
+          current_block = payload;
 
-            mHeightUpdate = millis();
-        }        
+          mHeightUpdate = millis();
+      }        
+      http.end();
+      } catch(...) {
+        Serial.println("Height HTTP error caught");
         http.end();
-        } catch(...) {
-          Serial.println("Height HTTP error caught");
-          http.end();
-        }
+      }
     }
   
   return current_block;
@@ -160,16 +217,21 @@ String getBTCprice(void){
     
         if (WiFi.status() != WL_CONNECTED) {
             static char price_buffer[16];
-            snprintf(price_buffer, sizeof(price_buffer), "$%u", bitcoin_price);
+            #if defined(PRICEEUR)
+              snprintf(price_buffer, sizeof(price_buffer), "eur %u", bitcoin_price);
+            #else
+              snprintf(price_buffer, sizeof(price_buffer), "$%u", bitcoin_price);
+            #endif
             return String(price_buffer);
         }
-        
+        WiFiClientSecure client;
+        client.setInsecure();   // <-- THIS fixes -30592
         HTTPClient http;
         http.setTimeout(10000);
         bool priceUpdated = false;
 
         try {
-        http.begin(getBTCAPI);
+        http.begin(client, getBTCAPI);
         int httpCode = http.GET();
 
         if (httpCode == HTTP_CODE_OK) {
@@ -177,11 +239,16 @@ String getBTCprice(void){
 
             StaticJsonDocument<1024> doc;
             deserializeJson(doc, payload);
-          
-            if (doc.containsKey("bitcoin") && doc["bitcoin"].containsKey("usd")) {
-                bitcoin_price = doc["bitcoin"]["usd"];
-            }
 
+            #if defined(PRICEEUR)
+              if (doc.containsKey("bitcoin") && doc["bitcoin"].containsKey("eur")) {
+                  bitcoin_price = doc["bitcoin"]["eur"];
+              }
+            #else
+              if (doc.containsKey("bitcoin") && doc["bitcoin"].containsKey("usd")) {
+                  bitcoin_price = doc["bitcoin"]["usd"];
+              }
+            #endif
             doc.clear();
 
             mBTCUpdate = millis();
@@ -195,7 +262,12 @@ String getBTCprice(void){
     }  
   
   static char price_buffer[16];
-  snprintf(price_buffer, sizeof(price_buffer), "$%u", bitcoin_price);
+  #if defined(PRICEEUR)
+    snprintf(price_buffer, sizeof(price_buffer), "eur %u", bitcoin_price);
+  #else
+    snprintf(price_buffer, sizeof(price_buffer), "$%u", bitcoin_price);
+  #endif
+
   return String(price_buffer);
 }
 
@@ -375,11 +447,11 @@ clock_data_t getClockData_t(unsigned long mElapsed)
   return data;
 }
 
-coin_data getCoinData(unsigned long mElapsed)
+coin_data getCoinData(unsigned long mElapsed, bool updateGlobals)
 {
   coin_data data;
 
-  updateGlobalData(); // Update gData vars asking mempool APIs
+  if (updateGlobals) updateGlobalData(); // Update gData vars asking mempool APIs
 
   data.completedShares = shares;
   data.totalKHashes = totalKHashes;
@@ -393,7 +465,7 @@ coin_data getCoinData(unsigned long mElapsed)
   data.minimumFee = String(gData.minimumFee);
 #endif
   data.halfHourFee = String(gData.halfHourFee) + " sat/vB";
-  data.netwrokDifficulty = gData.difficulty;
+  data.networkDifficulty = gData.difficulty;
   data.globalHashRate = gData.globalHash;
   data.blockHeight = getBlockHeight();
 
@@ -441,6 +513,8 @@ pool_data getPoolData(void){
     if((mPoolUpdate == 0) || (millis() - mPoolUpdate > UPDATE_POOL_min * 60 * 1000)){      
         if (WiFi.status() != WL_CONNECTED) return pData;            
         //Make first API call to get global hash and current difficulty
+        WiFiClientSecure client;
+        client.setInsecure();   // <-- THIS fixes -30592
         HTTPClient http;
         http.setTimeout(10000);        
         try {          
@@ -449,7 +523,7 @@ pool_data getPoolData(void){
           if (btcWallet.indexOf(".")>0) btcWallet = btcWallet.substring(0,btcWallet.indexOf("."));
 #ifdef SCREEN_WORKERS_ENABLE
           Serial.println("Pool API : " + poolAPIUrl+btcWallet);
-          http.begin(poolAPIUrl+btcWallet);
+          http.begin(client, poolAPIUrl+btcWallet);
 #else
           http.begin(String(getPublicPool)+btcWallet);
 #endif

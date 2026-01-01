@@ -16,8 +16,11 @@
 
 //#define getBTCAPI "https://api.coindesk.com/v1/bpi/currentprice.json" -- doesn't work anymore
 //#define getBTCAPI "https://api.blockchain.com/v3/exchange/tickers/BTC-USDT" -- updates infrequently
-#define getBTCAPI "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
-
+#if defined(PRICEEUR)
+  #define getBTCAPI "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur"
+#else
+  #define getBTCAPI "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+#endif
 #define UPDATE_BTC_min   1
 
 //API Block height
@@ -26,6 +29,7 @@
 
 //APIs Global Stats
 #define getGlobalHash "https://mempool.space/api/v1/mining/hashrate/3d"
+#define getGlobalHashRate "https://blockchain.info/q/hashrate" // easier
 #define getDifficulty "https://mempool.space/api/v1/difficulty-adjustment"
 #define getFees "https://mempool.space/api/v1/fees/recommended"
 #define UPDATE_Global_min 2
@@ -110,7 +114,7 @@ typedef struct {
   String economyFee;
   String minimumFee;
 #endif
-  String netwrokDifficulty;
+  String networkDifficulty;
   String globalHashRate;
   String blockHeight;
   float progressPercent;
@@ -125,9 +129,16 @@ typedef struct{
 
 void setup_monitor(void);
 
+String getBTCprice(void);
+String getCurrentHashRate(unsigned long mElapsed);
+String getTime(void);
+String getBlockHeight(void);
+void updateGlobalData(void);
+String getGlobalHashRate(void);
+
 mining_data getMiningData(unsigned long mElapsed);
 clock_data getClockData(unsigned long mElapsed);
-coin_data getCoinData(unsigned long mElapsed);
+coin_data getCoinData(unsigned long mElapsed, bool updateGlobals=true);
 pool_data getPoolData(void);
 
 clock_data_t getClockData_t(unsigned long mElapsed);

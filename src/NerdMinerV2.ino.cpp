@@ -131,7 +131,7 @@ void setup()
   Serial.println("");
   Serial.println("Initiating tasks...");
   static const char monitor_name[] = "(Monitor)";
-  #if defined(CONFIG_IDF_TARGET_ESP32)
+  #if defined(CONFIG_IDF_TARGET_ESP32)  && !defined(ESP32_LOLIN32_LITE)
   // Increased stack for ESP32 classic due to NVS operations  
   BaseType_t res1 = xTaskCreatePinnedToCore(runMonitor, "Monitor", 9500, (void*)monitor_name, 5, NULL,1);
   #else
@@ -140,10 +140,10 @@ void setup()
 
   /******** CREATE STRATUM TASK *****/
   static const char stratum_name[] = "(Stratum)";
- #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(ESP32_2432S028R) && !defined(ESP32_2432S028_2USB) && !defined(ESP32_LOLIN32_LITE)
+ #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(ESP32_2432S028R) && !defined(ESP32_2432S028_2USB) //&& !defined(ESP32_LOLIN32_LITE)
   // Reduced stack for ESP32 classic to save memory
   BaseType_t res2 = xTaskCreatePinnedToCore(runStratumWorker, "Stratum", 12000, (void*)stratum_name, 4, NULL,1);
- #elif defined(ESP32_2432S028R) || defined(ESP32_2432S028_2USB)
+ #elif defined(ESP32_2432S028R) || defined(ESP32_2432S028_2USB) //|| defined(ESP32_LOLIN32_LITE)
   // Free a little bit of the heap to the screen
   BaseType_t res2 = xTaskCreatePinnedToCore(runStratumWorker, "Stratum", 13500, (void*)stratum_name, 4, NULL,1);
 //  #elif defined(ESP32_LOLIN32_LITE)

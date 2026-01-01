@@ -28,8 +28,8 @@ bool hasChangedScreen = true;
 extern unsigned long mPoolUpdate;
 extern TSettings Settings;
 extern DisplayDriver *currentDisplayDriver;
-
-int current_screen = -1;
+// extern global_data gData;
+int current_screen = NO_SCREEN;
 
 void printheap(){
   Serial.print("$$ Free Heap:");
@@ -163,23 +163,14 @@ void custom2_Display_MinerScreen(unsigned long mElapsed)
 {
   mining_data data = getMiningData(mElapsed);
 
-  printPoolData();
-
-  if (hasChangedScreen || (current_screen!=0)) tft.pushImage(0, 0, minerScreenWidth, minerScreenHeight, minerScreen);
-    
-  hasChangedScreen = false; 
-  current_screen=0;
-
-  // Print background screen
-  // tft.fillSprite(TFT_BLACK);
-  // tft.fillRect(0, 0, TFT_WIDTH, TFT_HEIGHT, TFT_RED);
-  // createBackgroundSprite(WIDTH, HEIGHT);
-  // background.pushImage(0, 0, minerScreenWidth, minerScreenHeight, minerScreen);
-  // // // background.pushImage(0, 0, configScreenTopWidth, configScreenTopHeight, configScreenTop);
-  // background.pushSprite(0, 0);
-  // background.deleteSprite();
   
-  mMonitor.NerdStatus=NM_hashing;
+  if (hasChangedScreen || (current_screen!=SCREEN_MINING)) tft.pushImage(0, 0, minerScreenWidth, minerScreenHeight, minerScreen);
+  current_screen=SCREEN_MINING;
+  
+  
+  printPoolData();
+  hasChangedScreen = false; 
+  // mMonitor.NerdStatus=NM_hashing;
 
   //  ------------------- block info
   createBackgroundSprite(140, 100);
@@ -226,59 +217,123 @@ void custom2_Display_MinerScreen(unsigned long mElapsed)
   // ----------------------- hashing rate
   createBackgroundSprite(240, 30);
   // background.fillSprite(TFT_GREEN);
-  background.pushImage(0, -130, minerScreenWidth, minerScreenHeight, minerScreen);
+  background.pushImage(0, -128, minerScreenWidth, minerScreenHeight, minerScreen);
   
   render.setFontSize(24);
   render.rdrawString(data.totalMHashes.c_str(), 230, 0, TFT_BLACK);
   render.rdrawString(data.currentHashRate.c_str(), 120, 0, TFT_BLACK);
 
-  background.pushSprite(0, 130);
+  background.pushSprite(0, 128);
   background.deleteSprite();
 
   Serial.printf(">>> Completed %s share(s), %s Khashes, avg. hashrate %s KH/s\n",
                 data.completedShares.c_str(), data.totalKHashes.c_str(), data.currentHashRate.c_str());
-
-  //   //Hashrate
-  // render.setFontSize(32);
-  // render.setCursor(0, 0);
-  // render.setFontColor(TFT_BLACK);    
-  // render.rdrawString(data.currentHashRate.c_str(), 114, 24, TFT_DARKGREY);
-
-  //   //Valid Blocks
-  //   render.setFontSize(22);
-  //   render.drawString(data.valids.c_str(), 15, 92, TFT_BLACK);
-    
-  //   //Mining Time
-  //   char timeMining[15]; 
-  //   unsigned long secElapsed = millis() / 1000;
-  //   int days = secElapsed / 86400; 
-  //   int hours = (secElapsed - (days * 86400)) / 3600;                                                        //Number of seconds in an hour
-  //   int mins = (secElapsed - (days * 86400) - (hours * 3600)) / 60;                                          //Remove the number of hours and calculate the minutes.
-  //   int secs = secElapsed - (days * 86400) - (hours * 3600) - (mins * 60);   
-  //   sprintf(timeMining, "%01d  %02d:%02d:%02d", days, hours, mins, secs);
-  //   render.setFontSize(10);
-  //   render.setCursor(0, 10);        
-  //   render.rdrawString(String(timeMining).c_str(), 124, 0, TFT_BLACK);
-
-  //   //Push prepared background to screen
-  //   background.pushSprite(0,0);
 }
 
-uint16_t osx=64, osy=64, omx=64, omy=64, ohx=64, ohy=64;  // Saved H, M, S x & y coords
+unsigned long previousMillisGlobal = 0;
+
 void custom2_Display_GlobalHashScreen(unsigned long mElapsed)
 {
-    clock_data_t data = getClockData_t(mElapsed);
 
-    tft.pushImage(0, 0, globalStatsWidth, globalStatsHeight, globalStats);
-    current_screen=1;
     printPoolData();
     hasChangedScreen = false;
+
+    if (hasChangedScreen || (current_screen!=SCREEN_GLOBAL))  tft.pushImage(0, 0, globalStatsWidth, globalStatsHeight, globalStats);
+    current_screen=SCREEN_GLOBAL;
+    
+    coin_data data = getCoinData(mElapsed, false);
+    mining_data mining_data = getMiningData(mElapsed);
+    // 
+    // global_data g_data;
+    // printheap();
+    String globalHash = getGlobalHashRate();
+    
+  //   if ((millis() - previousMillisGlobal) >= 10000){
+  //     Serial.println(" ------ ciaoooo ");
+  //     previousMillisGlobal=millis();
+  //   }
+    //   updateGlobalData();
+    //   previousMillisGlobal = millis();
+    // } else {
+      
+    // }
+
+    // Serial.println("globals -----------");
+    // String btcPrice = getBTCprice();
+    // String currHashRate = getCurrentHashRate(mElapsed);
+    // String time = getTime();
+    // String blkHeight = getBlockHeight();
+    Serial.println(" ------ globals ");
+    Serial.println(data.btcPrice);
+    Serial.println(globalHash);
+    Serial.println(data.currentTime);
+    Serial.println(data.blockHeight);
+    Serial.println(data.remainingBlocks);
+    Serial.println(" ---------------");
+
+    // String btcPrice = getBTCprice();
+    // String blkHeight = getBlockHeight();
+    // String currHashRate = getCurrentHashRate(mElapsed);
+    // String time = getTime();
+    // ---------------------- bitcoin price
+    createBackgroundSprite(100, 20);
+    background.fillSprite(TFT_RED);
+    // background.pushImage(-138, 0, globalStatsWidth, globalStatsHeight, globalStats);
+    
+    // Print BTC Price
+    background.setFreeFont(FSSB9);
+    background.setTextSize(1);
+    background.setTextDatum(TL_DATUM);
+    background.setTextColor(0xE71C);
+    background.drawString(data.globalHashRate.c_str(), 0, 3, GFXFF);
+
+    background.pushSprite(138, 0);
+    background.deleteSprite();
+
+    // // ---------------------- block progress
+    // createBackgroundSprite(210, 28);
+    // // background.fillSprite(TFT_GREEN);
+    // background.pushImage(0, -146, globalStatsWidth, globalStatsHeight, globalStats);
+    
+
+    // render.setFontSize(20);
+    // render.setAlignment(Align::TopRight);
+    // render.rdrawString(data.globalHashRate.c_str(), 205, 0, TFT_BLACK);
+
+    // // Draw percentage rectangle
+    // int x2 = 1 + (87 * data.progressPercent / 100);
+    // background.fillRect(1, 28-19, x2, 18, 0xDEDB);
+
+    // background.setTextFont(FONT2);
+    // background.setTextSize(1); 
+    // background.setTextDatum(MC_DATUM);
+    // background.setTextColor(TFT_BLACK);
+    // background.drawString(data.remainingBlocks.c_str(), 43, 28-10, FONT2);
+    
+    // background.pushSprite(0, 146);
+    // background.deleteSprite();
+
+    // // ---------------------- block properties
+    // createBackgroundSprite(120, 60);
+    // // background.fillSprite(TFT_MAGENTA);
+    // // background.pushImage(0, 0, globalStatsWidth, globalStatsHeight, globalStats);
+    
+    // background.pushSprite(120, 49);
+    // background.deleteSprite();
+
+    // // ---------------------- current block
+    // createBackgroundSprite(95, 40);
+    // // background.fillSprite(TFT_BLUE);
+    // // background.pushImage(0, 0, globalStatsWidth, globalStatsHeight, globalStats);
+    
+    // background.pushSprite(0, 98);
+    // background.deleteSprite();
+
+    Serial.printf(">>> Completed %s share(s), %s Khashes, avg. hashrate %s KH/s\n",
+                mining_data.completedShares.c_str(), mining_data.totalKHashes.c_str(), mining_data.currentHashRate.c_str());
+
 }
 
-// void custom2_Display_GlobalHashScreen(unsigned long mElapsed)
-// {
-
-// }
 
 void custom2_Display_LoadingScreen(void)
 {
@@ -327,7 +382,7 @@ void custom2_Display_DoLedStuff(unsigned long frame)
   }
 }
 
-CyclicScreenFunction custom2_DisplayCyclicScreens[] = {custom2_Display_MinerScreen, custom2_Display_GlobalHashScreen};
+CyclicScreenFunction custom2_DisplayCyclicScreens[] = {custom2_Display_GlobalHashScreen, custom2_Display_MinerScreen};
 
 DisplayDriver custom2_DisplayDriver = {
     custom2_Display_Init,
