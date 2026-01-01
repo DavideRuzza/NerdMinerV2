@@ -64,6 +64,18 @@ DisplayDriver *currentDisplayDriver = &t_hmiDisplayDriver;
 DisplayDriver *currentDisplayDriver = &sp_kcDisplayDriver;
 #endif
 
+#ifdef ST7735_160x128_DISPLAY
+DisplayDriver *currentDisplayDriver = &custom0_DisplayDriver;
+#endif
+
+#ifdef ST7735_128x128_DISPLAY
+DisplayDriver *currentDisplayDriver = &custom1_DisplayDriver;
+#endif
+
+#ifdef ST7789_240x240_DISPLAY
+DisplayDriver *currentDisplayDriver = &custom2_DisplayDriver;
+#endif
+
 
 // Initialize the display
 void initDisplay()

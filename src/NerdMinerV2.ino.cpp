@@ -140,12 +140,15 @@ void setup()
 
   /******** CREATE STRATUM TASK *****/
   static const char stratum_name[] = "(Stratum)";
- #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(ESP32_2432S028R) && !defined(ESP32_2432S028_2USB)
+ #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(ESP32_2432S028R) && !defined(ESP32_2432S028_2USB) && !defined(ESP32_LOLIN32_LITE)
   // Reduced stack for ESP32 classic to save memory
   BaseType_t res2 = xTaskCreatePinnedToCore(runStratumWorker, "Stratum", 12000, (void*)stratum_name, 4, NULL,1);
  #elif defined(ESP32_2432S028R) || defined(ESP32_2432S028_2USB)
   // Free a little bit of the heap to the screen
   BaseType_t res2 = xTaskCreatePinnedToCore(runStratumWorker, "Stratum", 13500, (void*)stratum_name, 4, NULL,1);
+//  #elif defined(ESP32_LOLIN32_LITE)
+//   // Free a little bit of the heap to the screen
+//   BaseType_t res2 = xTaskCreatePinnedToCore(runStratumWorker, "Stratum", 25000, (void*)stratum_name, 4, NULL,1);
  #else
   BaseType_t res2 = xTaskCreatePinnedToCore(runStratumWorker, "Stratum", 15000, (void*)stratum_name, 4, NULL,1);
  #endif

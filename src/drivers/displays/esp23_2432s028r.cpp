@@ -300,7 +300,6 @@ void esp32_2432S028R_ClockScreen(unsigned long mElapsed)
   printPoolData();
 
   hasChangedScreen = false;
-
   clock_data data = getClockData(mElapsed);
 
  // Create background sprite to print data at once
@@ -561,7 +560,7 @@ void esp32_2432S028R_DoLedStuff(unsigned long frame)
               /* Serial.println(currentDisplayDriver->current_cyclic_screen); */
               currentDisplayDriver->current_cyclic_screen = currentDisplayDriver->current_cyclic_screen - 1;      
               if (currentDisplayDriver->current_cyclic_screen<0) currentDisplayDriver->current_cyclic_screen = currentDisplayDriver->num_cyclic_screens - 1;              
-            }
+            }currentDisplayDriver
       }
       previousTouchMillis = currentMillis;
     }
